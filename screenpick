@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Screenshot a selection of screen
+
+import png:- | xclip -selection clipboard -t image/png && twmnc --content "Screenshot copied to clipboard" --size 50

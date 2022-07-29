@@ -1,0 +1,9 @@
+#!/bin/sh
+
+[ ! -f "$XDG_DATA_HOME/bookmarks" ] && curl "https://raw.githubusercontent.com/nikotile/dotfiles/main/.local/share/bookmarks" > "$XDG_DATA_HOME"/bookmarks
+
+url="$(dmenu -l 5 -nb "#d2d971" -nf "#570580" -sb "#36121f" -sf "#bab6b8" < "$XDG_DATA_HOME"/bookmarks | grep -o "[a-z].*")"
+
+[ -z "$url" ] && exit
+
+devour surf "$url"

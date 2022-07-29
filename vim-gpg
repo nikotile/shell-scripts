@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Write in editor and encrypt with gpg
+
+printf "Enter recepient:\n-> " ; read -r RECEPIENT
+
+[ -z "$EDITOR" ] && EDITOR=vim
+
+tmp=$(mktemp -p /tmp/)
+$EDITOR "$tmp"
+
+gpg -e --sign --armor --no-version -r "$RECEPIENT" < "$tmp"
+
+rm "$tmp"

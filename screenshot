@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Screenshot screen, duh
+
+FILENAME="screen_$(date +%Y%m%d_%H%m%S).png"
+mkdir -p "$HOME/pictures/screenshots"
+import -window root "$HOME/pictures/screenshots/$FILENAME" | xclip -selection clipboard -t image/png
+twmnc --icon="$HOME/pictures/screenshots/$FILENAME" --content "Screenshot taken" --size 50
+
