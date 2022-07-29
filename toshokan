@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Get magnet links from an RSS feed and add them to Transmission
+# Have to use bash because array breaks POSIX compliance
+# What the heck is Toshokan?
+# It's 図書館, the Japanese word for library
+
+# Main feed
+#TOSHOKAN_FEED="https://example.lol"
+
+# Send a GET request for monitoring
+#TOSHOKAN_MONITOR="https://example.lol"
+
+# Transmission credentials
+#TRANSMISSION_USER="user"
+#TRANSMISSION_PASSWORD="password"
+
+# Jellyfin directory
+# Downloaded torrent will be recorded in .torrentlist
+dir="/mnt/data/app/jellyfin/media/anime"
+torrentlist="$dir/.torrentlist"
+
+# Seasonal anime titles
+titles=(
+  "Overlord IV"
+  "Made in Abyss"
+  "Youkoso Jitsuryoku"
+  "Lycoris Recoil"
+  "Luminous Witches"
+  "Bucchigire"
+)
+
+# Me can't into bash
+file="$(mktemp -p /tmp/)"
+
+# Main request
+curl -s "$TOSHOKAN_FEED" | jc --xml -p | grep "^\s.*\"title\":" -A 1 | sed "s/^\s*\"[a-z]*\":\s//" | sed "s/,$//" | sed "s/^\"//" | sed "s/\"$//" > "$file"
+
+IFS="$(printf '\n')" # or simply IFS=$'\n' because we're using bash
+for title in "${titles[@]}"; do
+
+  # Create a folder(s)
+  folder=$(grep "$title" < "$file" | sed "s/^\[[a-z,A-Z]*\]\s//" | sed "s/\s-\s[0-99].*$//" | sort --unique)
+  [ -z "$folder" ] && continue
+  w="$dir/$folder"
+  mkdir -p "$w"
+
+  magnet=$(grep "$title" -A 1 < "$file" | grep "magnet")
+  for link in $magnet; do
+    grep -q "$link" < "$torrentlist" && continue
+    echo "$link" >> "$torrentlist" && transmission-remote -n "$TRANSMISSION_USER:$TRANSMISSION_PASSWORD" -a "$link" -w "$w"
+  done
+
+done
+
+curl "$TOSHOKAN_MONITOR"
+rm "$file"

@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# Return a stream URL from a Subsonic server
+
+#SUBSONIC_SERVER="https://example.lol"
+#SUBSONIC_USER="user"
+#SUBSONIC_PASSWORD="password"
+
+tmp=$(mktemp -p /tmp/)
+
+printf "Enter your query\n-> "
+read -r query
+
+curl -sG --data-urlencode "query=$query" "$SUBSONIC_SERVER/rest/search3?u=$SUBSONIC_USER&p=$SUBSONIC_PASSWORD&v=1.16.1&c=bash&f=json" > "$tmp"
+
+id=$(jq -s '.[] | ."subsonic-response".searchResult3.song[0].id' "$tmp" | sed 's/\"//g')
+title=$(jq -s '.[] | ."subsonic-response".searchResult3.song[0].title' "$tmp" | sed 's/\"//g')
+artist=$(jq -s '.[] | ."subsonic-response".searchResult3.song[0].artist' "$tmp" | sed 's/\"//g')
+
+[ "$id" = "null" ] && echo "No result" && rm "$tmp" && exit 1
+
+url="$SUBSONIC_SERVER/rest/stream?u=$SUBSONIC_USER&p=$SUBSONIC_PASSWORD&v=1.16.1&c=curl&f=json&id=$id"
+
+printf "%s by %s\n%s\n" "$title" "$artist" "$url"
+printf "%s" "$url" | xclip -sel c
+rm "$tmp"
