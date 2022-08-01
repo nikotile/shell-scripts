@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# Taken from https://jonathanh.co.uk/blog/multipart-emails-in-neomutt
+# With some tweaks
+#
+# In muttrc, put the following:
+# macro compose m "<first-entry>\
+# <pipe-entry>convert-multipart<enter>\
+# <enter-command>source /tmp/neomutt-commands<enter>
+
+commandsFile="/tmp/neomutt-commands"
+markdownFile="/tmp/neomutt-markdown"
+htmlFile="/tmp/neomutt.html"
+
+cat - > "$markdownFile"
+printf "push " > "$commandsFile"
+
+pandoc -f markdown -t html5 --standalone --template "$XDG_CONFIG_HOME"/pandoc/templates/email.html "$markdownFile" > "$htmlFile"
+
+{
+# Attach the html file
+printf "<attach-file>\"%s\"<enter>" "$htmlFile"
+
+# Set it as inline
+printf "<toggle-disposition>"
+
+# Tell neomutt to delete it after sending
+printf "<toggle-unlink>"
+
+# Select both the html and markdown files
+printf "<tag-entry><previous-entry><tag-entry>"
+
+# Group the selected messages as alternatives
+printf "<group-alternatives>"
+} >> "$commandsFile"
