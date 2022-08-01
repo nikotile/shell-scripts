@@ -5,8 +5,11 @@
 # What the heck is Toshokan?
 # It's 図書館, the Japanese word for library
 
-# Main feed
-#TOSHOKAN_FEED="https://example.lol"
+feeds=(
+  "$TOSHOKAN_FEED"
+  #"https://example.lol"
+  # Add more feeds to the array
+)
 
 # Send a GET request for monitoring
 #TOSHOKAN_MONITOR="https://example.lol"
@@ -28,15 +31,19 @@ titles=(
   "Lycoris Recoil"
   "Luminous Witches"
   "Bucchigire"
+  "Summertime Render"
 )
 
 # Me can't into bash
 file="$(mktemp -p /tmp/)"
 
-# Main request
-curl -s "$TOSHOKAN_FEED" | jc --xml -p | grep "^\s.*\"title\":" -A 1 | sed "s/^\s*\"[a-z]*\":\s//" | sed "s/,$//" | sed "s/^\"//" | sed "s/\"$//" > "$file"
-
 IFS="$(printf '\n')" # or simply IFS=$'\n' because we're using bash
+
+# Main request
+for f in "${feeds[@]}"; do
+  curl -s "$f" | jc --xml -p | grep "^\s.*\"title\":" -A 1 | sed "s/^\s*\"[a-z]*\":\s//" | sed "s/,$//" | sed "s/^\"//" | sed "s/\"$//" >> "$file"
+done;
+
 for title in "${titles[@]}"; do
 
   # Create a folder(s)
@@ -47,7 +54,7 @@ for title in "${titles[@]}"; do
 
   magnet=$(grep "$title" -A 1 < "$file" | grep "magnet")
   for link in $magnet; do
-    grep -q "$link" < "$torrentlist" && continue
+    [ -n "$(grep "$link" < "$torrentlist")" ] && continue
     echo "$link" >> "$torrentlist" && transmission-remote -n "$TRANSMISSION_USER:$TRANSMISSION_PASSWORD" -a "$link" -w "$w"
   done
 
